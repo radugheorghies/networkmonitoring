@@ -3,6 +3,7 @@ module networkmonitoring
 go 1.17
 
 require (
+	github.com/caarlos0/env/v6 v6.9.1
 	github.com/gammazero/nexus/v3 v3.0.4
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	gopkg.in/jcelliott/turnpike.v2 v2.0.0-20210629143239-1dadcad507a3
