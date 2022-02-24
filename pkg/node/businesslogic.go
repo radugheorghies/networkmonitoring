@@ -64,7 +64,7 @@ loop:
 			}
 			log.Println(m)
 		case nt := <-n.netChan:
-			if err := n.wamp.Publish("memData", nil, []interface{}{nt}, nil); err != nil {
+			if err := n.wamp.Publish("networkData", nil, []interface{}{nt}, nil); err != nil {
 				log.Println("Problem occurred while publishing network data:", err)
 				n.exitCPUChan <- struct{}{}
 				n.exitMemChan <- struct{}{}
