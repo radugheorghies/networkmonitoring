@@ -51,7 +51,7 @@ func (a *Aggregator) listenForCPURecords() {
 		}
 
 	}); err != nil {
-		log.Fatalln("Error subscribing to start monitoring channel:", err)
+		log.Fatalln("Error subscribing to start monitoring cpu channel:", err)
 	}
 }
 
@@ -90,7 +90,7 @@ func (a *Aggregator) listenForMemRecords() {
 		}
 
 	}); err != nil {
-		log.Fatalln("Error subscribing to start monitoring channel:", err)
+		log.Fatalln("Error subscribing to start monitoring mem channel:", err)
 	}
 }
 
@@ -131,6 +131,6 @@ func (a *Aggregator) listenForNetworkRecords() {
 		}
 
 	}); err != nil {
-		log.Fatalln("Error subscribing to start monitoring channel:", err)
+		log.Fatalln("Error subscribing to start monitoring network channel:", err)
 	}
 }
