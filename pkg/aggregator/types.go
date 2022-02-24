@@ -25,7 +25,6 @@ type Node struct {
 	AvgMem         MemReport
 	AvgNetwork     NetworkReport
 	TotalNetwork   NetworkReport
-	FirstNetwork   NetworkReport
 }
 
 type CPUReport struct {

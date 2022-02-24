@@ -113,7 +113,7 @@ func (a *Aggregator) listenForNetworkRecords() {
 				tmpData.NetworkRecords = append(tmpData.NetworkRecords, result)
 
 				// now we calculate the averages
-				length := len(tmpData.MemRecords)
+				length := len(tmpData.NetworkRecords)
 				if length > 1 {
 					tmpData.AvgNetwork.BytesRecv = (tmpData.AvgNetwork.BytesRecv*(int64(length)-1) + result.BytesRecv - tmpData.NetworkRecords[length-2].BytesRecv) / int64(length)
 					tmpData.AvgNetwork.BytesSent = (tmpData.AvgNetwork.BytesSent*(int64(length)-1) + result.BytesSent - tmpData.NetworkRecords[length-2].BytesSent) / int64(length)
@@ -121,8 +121,12 @@ func (a *Aggregator) listenForNetworkRecords() {
 					tmpData.AvgNetwork.PacketsSent = (tmpData.AvgNetwork.PacketsSent*(int64(length)-1) + result.PacketsSent - tmpData.NetworkRecords[length-2].PacketsSent) / int64(length)
 				} else {
 					tmpData.AvgNetwork = NetworkReport{}
-					tmpData.FirstNetwork = result
 				}
+
+				tmpData.TotalNetwork.BytesRecv = result.BytesRecv - tmpData.NetworkRecords[0].BytesRecv
+				tmpData.TotalNetwork.BytesSent = result.BytesSent - tmpData.NetworkRecords[0].BytesSent
+				tmpData.TotalNetwork.PacketsRecv = result.PacketsRecv - tmpData.NetworkRecords[0].PacketsRecv
+				tmpData.TotalNetwork.PacketsSent = result.PacketsSent - tmpData.NetworkRecords[0].PacketsSent
 
 				a.nodesData.nodes[result.NodeName] = tmpData
 				a.nodesData.Unlock()
