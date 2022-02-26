@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 )
 
 func (a *Aggregator) listen() {
@@ -11,6 +12,8 @@ func (a *Aggregator) listen() {
 	go a.listenForCPURecords()
 	go a.listenForMemRecords()
 	go a.listenForNetworkRecords()
+	go a.listenStartAggregator()
+	go a.listenStopAggregator()
 }
 
 func (a *Aggregator) listenForCPURecords() {
@@ -22,6 +25,9 @@ func (a *Aggregator) listenForCPURecords() {
 					log.Println("ERROR UNMARSHALING CPU DATA:", err)
 					continue
 				}
+
+				s := result.NodeName + "," + fmt.Sprintf("%.2f", result.Avg) + "," + strings.Trim(strings.Replace(fmt.Sprint(result.PerCore), " ", ",", -1), "[]")
+				a.cpuFile.WriteString(s)
 
 				a.nodesData.Lock()
 				if _, ok := a.nodesData.nodes[result.NodeName]; !ok {
@@ -64,6 +70,9 @@ func (a *Aggregator) listenForMemRecords() {
 					log.Println("ERROR UNMARSHALING MEM DATA:", err)
 					continue
 				}
+
+				s := result.NodeName + "," + fmt.Sprintf("%d", result.Total) + "," + fmt.Sprintf("%d", result.Used) + "," + fmt.Sprintf("%.2f", result.Usedpercent)
+				a.memFile.WriteString(s)
 
 				a.nodesData.Lock()
 				if _, ok := a.nodesData.nodes[result.NodeName]; !ok {
@@ -131,10 +140,44 @@ func (a *Aggregator) listenForNetworkRecords() {
 				a.nodesData.nodes[result.NodeName] = tmpData
 				a.nodesData.Unlock()
 
+				s := result.NodeName + "," + fmt.Sprintf("%d", tmpData.TotalNetwork.BytesSent) + "," + fmt.Sprintf("%d", tmpData.TotalNetwork.BytesRecv) + "," +
+					fmt.Sprintf("%d", tmpData.TotalNetwork.PacketsSent) + "," + fmt.Sprintf("%d", tmpData.TotalNetwork.PacketsRecv)
+				a.networkFile.WriteString(s)
+
 			}
 		}
 
 	}); err != nil {
 		log.Fatalln("Error subscribing to start monitoring network channel:", err)
+	}
+}
+
+func (a *Aggregator) listenStartAggregator() {
+	if err := a.wamp.Subscribe("startAggregator", nil, func(args []interface{}, kwargs map[string]interface{}) {
+		a.initFiles()
+		if err := a.wamp.Publish("stratMonitoring", nil, []interface{}{}, nil); err != nil {
+			log.Println("Problem occurred while publishing start commands to nodes:", err)
+		}
+	}); err != nil {
+		log.Fatalln("Error subscribing to start monitoring channel:", err)
+	}
+}
+
+func (a *Aggregator) listenStopAggregator() {
+	if err := a.wamp.Subscribe("stopAggregator", nil, func(args []interface{}, kwargs map[string]interface{}) {
+		if err := a.wamp.Publish("stopMonitoring", nil, []interface{}{}, nil); err != nil {
+			log.Println("Problem occurred while publishing start commands to nodes:", err)
+		}
+		if a.cpuFile != nil {
+			defer a.cpuFile.Close()
+		}
+		if a.memFile != nil {
+			defer a.memFile.Close()
+		}
+		if a.networkFile != nil {
+			defer a.networkFile.Close()
+		}
+	}); err != nil {
+		log.Fatalln("Error subscribing to stop monitoring channel:", err)
 	}
 }

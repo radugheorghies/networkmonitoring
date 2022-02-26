@@ -1,6 +1,7 @@
 package aggregator
 
 import (
+	"os"
 	"sync"
 
 	"gopkg.in/jcelliott/turnpike.v2"
@@ -8,8 +9,11 @@ import (
 
 // Aggregator is the default type of this package
 type Aggregator struct {
-	wamp      *turnpike.Client // connection to wamp server
-	nodesData nodesData
+	wamp        *turnpike.Client // connection to wamp server
+	nodesData   nodesData
+	cpuFile     *os.File
+	memFile     *os.File
+	networkFile *os.File
 }
 
 type nodesData struct {

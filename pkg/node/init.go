@@ -11,7 +11,7 @@ import (
 func (n *Node) init(startListen bool) {
 	// this will initiate everything
 	n.initWampServer()
-	// go n.initMonitoring()
+
 	if startListen {
 		n.listen()
 	}
