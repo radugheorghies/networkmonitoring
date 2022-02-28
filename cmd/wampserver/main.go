@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	address = "localhost:8087"
+	address = "localhost:8089"
 	realm   = "dataGateway"
 )
 
