@@ -34,14 +34,14 @@ func (b *BlockchainTest) startTest() {
 	}
 	time.Sleep(time.Second * 2)
 	// open the file to write erros and successfull opperations
-	b.errorf, err = os.Create("/errors.csv")
+	b.errorf, err = os.Create("errors.csv")
 	if err != nil {
 		log.Println("Error creating the errors file:", err)
 		return
 	}
 	defer b.errorf.Close()
 
-	b.successf, err = os.Create("/success.csv")
+	b.successf, err = os.Create("success.csv")
 	if err != nil {
 		log.Println("Error creating the success file:", err)
 		return
@@ -92,7 +92,7 @@ func (b *BlockchainTest) startTest() {
 	// preparing workers
 	wg.Add(env.Vars.Workers)
 	for i := 0; i < env.Vars.Workers; i++ {
-		b.startWorker()
+		go b.startWorker()
 	}
 
 	wg.Wait()
@@ -150,7 +150,7 @@ func (b *BlockchainTest) startWorker() {
 		// now we need to wait until we receiving the status of the transaction
 		for {
 			time.Sleep(100 * time.Millisecond)
-			fmt.Printf("Waiting receipt of transaction %s\n", tx.Hash().Hex())
+			// fmt.Printf("Waiting receipt of transaction %s\n", tx.Hash().Hex())
 			if !b.IsTransactionPending(context, tx.Hash()) {
 				receipt, err := b.ethClient.TransactionReceipt(context, tx.Hash())
 				if err != nil {
