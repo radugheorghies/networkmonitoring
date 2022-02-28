@@ -146,39 +146,42 @@ func (b *BlockchainTest) startWorker() {
 		}
 
 		fmt.Printf("tx sent: %s", tx.Hash().Hex())
+		go b.getTrResponse(trTime, context, tx.Hash())
+	}
+}
 
-		// now we need to wait until we receiving the status of the transaction
-		for {
-			time.Sleep(100 * time.Millisecond)
-			// fmt.Printf("Waiting receipt of transaction %s\n", tx.Hash().Hex())
-			if !b.IsTransactionPending(context, tx.Hash()) {
-				receipt, err := b.ethClient.TransactionReceipt(context, tx.Hash())
-				if err != nil {
-					log.Println(err)
-					break
-				}
-				if receipt.Status == 1 {
-					atomic.AddUint64(&b.trSuccess, 1)
-				} else {
-					atomic.AddUint64(&b.trFailed, 1)
-				}
+func (b *BlockchainTest) getTrResponse(trTime time.Time, context context.Context, tx common.Hash) {
+	// now we need to wait until we receiving the status of the transaction
+	for {
+		time.Sleep(100 * time.Millisecond)
+		// fmt.Printf("Waiting receipt of transaction %s\n", tx.Hash().Hex())
+		if !b.IsTransactionPending(context, tx) {
+			receipt, err := b.ethClient.TransactionReceipt(context, tx)
+			if err != nil {
+				log.Println(err)
 				break
 			}
+			if receipt.Status == 1 {
+				atomic.AddUint64(&b.trSuccess, 1)
+			} else {
+				atomic.AddUint64(&b.trFailed, 1)
+			}
+			break
 		}
-
-		endTime := time.Since(trTime)
-
-		// reagister the time
-
-		b.trTime.Lock()
-		if _, ok := b.trTime.values[endTime]; ok {
-			b.trTime.values[endTime] = b.trTime.values[endTime] + 1
-		} else {
-			b.trTime.values[endTime] = 1
-		}
-
-		b.trTime.Unlock()
 	}
+
+	endTime := time.Since(trTime)
+
+	// reagister the time
+
+	b.trTime.Lock()
+	if _, ok := b.trTime.values[endTime]; ok {
+		b.trTime.values[endTime] = b.trTime.values[endTime] + 1
+	} else {
+		b.trTime.values[endTime] = 1
+	}
+
+	b.trTime.Unlock()
 }
 
 func (b *BlockchainTest) IsTransactionPending(context context.Context, hash common.Hash) bool {
