@@ -145,7 +145,7 @@ func (b *BlockchainTest) startWorker() {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("tx sent: %s", tx.Hash().Hex())
+		fmt.Printf("tx sent: %s\n", tx.Hash().Hex())
 		wg.Add(1)
 		go b.getTrResponse(trTime, context, tx.Hash())
 	}
@@ -160,7 +160,7 @@ func (b *BlockchainTest) getTrResponse(trTime time.Time, context context.Context
 		if !b.IsTransactionPending(context, tx) {
 			receipt, err := b.ethClient.TransactionReceipt(context, tx)
 			if err != nil {
-				log.Println(err)
+				log.Println("Error getting the transaction receipt:", err)
 				break
 			}
 			if receipt.Status == 1 {
@@ -182,7 +182,6 @@ func (b *BlockchainTest) getTrResponse(trTime time.Time, context context.Context
 	} else {
 		b.trTime.values[endTime] = 1
 	}
-
 	b.trTime.Unlock()
 }
 
