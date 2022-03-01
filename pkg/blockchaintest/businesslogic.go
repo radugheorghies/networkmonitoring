@@ -165,8 +165,10 @@ func (b *BlockchainTest) getTrResponse(trTime time.Time, context context.Context
 			}
 			if receipt.Status == 1 {
 				atomic.AddUint64(&b.trSuccess, 1)
+				b.successf.WriteString(tx.Hex() + "\n")
 			} else {
 				atomic.AddUint64(&b.trFailed, 1)
+				b.errorf.WriteString(tx.Hex() + "\n")
 			}
 			break
 		}
