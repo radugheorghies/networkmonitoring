@@ -146,11 +146,13 @@ func (b *BlockchainTest) startWorker() {
 		}
 
 		fmt.Printf("tx sent: %s", tx.Hash().Hex())
+		wg.Add(1)
 		go b.getTrResponse(trTime, context, tx.Hash())
 	}
 }
 
 func (b *BlockchainTest) getTrResponse(trTime time.Time, context context.Context, tx common.Hash) {
+	defer wg.Done()
 	// now we need to wait until we receiving the status of the transaction
 	for {
 		time.Sleep(100 * time.Millisecond)
