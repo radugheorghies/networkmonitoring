@@ -1,12 +1,16 @@
 package blockchaintest
 
-import "time"
+import (
+	"networkmonitoring/pkg/core/env"
+	"time"
+)
 
 func New() *BlockchainTest {
 	return &BlockchainTest{
 		trTime: TrTime{
 			values: make(map[time.Duration]int),
 		},
+		trChan: make(chan Transaction, env.Vars.Workers),
 	}
 }
 

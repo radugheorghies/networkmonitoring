@@ -90,34 +90,15 @@ func (b *BlockchainTest) startTest() {
 	}
 
 	// preparing workers
-	wg.Add(env.Vars.Workers)
+	wg.Add(env.Vars.Workers * env.Vars.ProcessPerWorker)
 	for i := 0; i < env.Vars.Workers; i++ {
 		go b.startWorker()
 	}
 
-	wg.Wait()
+	context := context.Background()
 
-	// stop the aggregator
-	if err := b.wamp.Publish("stopAggregator", nil, []interface{}{}, nil); err != nil {
-		log.Println("Problem occurred while publishing start commands to nodes:", err)
-	}
-
-	log.Println("TEST RESULTS:")
-	log.Println("Successfull transactions:", b.trSuccess)
-	log.Println("Failed transactions:", b.trFailed)
-
-	log.Println("Transactions by time:")
-	for k, v := range b.trTime.values {
-		log.Println("time:", k, "- number of transactions:", v)
-	}
-}
-
-func (b *BlockchainTest) startWorker() {
-	defer wg.Done()
-
-	for i := 0; i < env.Vars.ProcessPerWorker; i++ {
+	for i := 0; i < env.Vars.Workers*env.Vars.ProcessPerWorker; i++ {
 		trTime := time.Now()
-		context := context.Background()
 		// do the magic here
 		fromAddress := crypto.PubkeyToAddress(*b.publicKeyECDSA)
 		nonce, err := b.ethClient.PendingNonceAt(context, fromAddress)
@@ -140,14 +121,44 @@ func (b *BlockchainTest) startWorker() {
 		rand.Seed(time.Now().UnixNano())
 		recipient := rand.Intn(len(b.addresses.array) - 1)
 
-		tx, err := b.instance.Transfer(auth, common.HexToAddress(b.addresses.array[recipient]), big.NewInt(10000000000000000))
+		myTx := Transaction{
+			Auth:    auth,
+			Addr:    common.HexToAddress(b.addresses.array[recipient]),
+			Val:     big.NewInt(10000000000000000),
+			TrTime:  trTime,
+			Context: context,
+		}
+
+		b.trChan <- myTx
+	}
+
+	wg.Wait()
+
+	// stop the aggregator
+	if err := b.wamp.Publish("stopAggregator", nil, []interface{}{}, nil); err != nil {
+		log.Println("Problem occurred while publishing start commands to nodes:", err)
+	}
+
+	log.Println("TEST RESULTS:")
+	log.Println("Successfull transactions:", b.trSuccess)
+	log.Println("Failed transactions:", b.trFailed)
+
+	log.Println("Transactions by time:")
+	for k, v := range b.trTime.values {
+		log.Println("time:", k, "- number of transactions:", v)
+	}
+}
+
+func (b *BlockchainTest) startWorker() {
+	for tr := range b.trChan {
+		tx, err := b.instance.Transfer(tr.Auth, tr.Addr, tr.Val)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		fmt.Printf("tx sent: %s\n", tx.Hash().Hex())
 		wg.Add(1)
-		go b.getTrResponse(trTime, context, tx.Hash())
+		go b.getTrResponse(tr.TrTime, tr.Context, tx.Hash())
 	}
 }
 
@@ -190,7 +201,8 @@ func (b *BlockchainTest) getTrResponse(trTime time.Time, context context.Context
 func (b *BlockchainTest) IsTransactionPending(context context.Context, hash common.Hash) bool {
 	_, pending, err := b.ethClient.TransactionByHash(context, hash)
 	if err != nil {
-		panic(err)
+		log.Println("Error checking pending transaction:", err)
+		return true
 	}
 	return pending
 }

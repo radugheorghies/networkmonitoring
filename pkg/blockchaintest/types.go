@@ -1,6 +1,7 @@
 package blockchaintest
 
 import (
+	"context"
 	"crypto"
 	"crypto/ecdsa"
 	"math/big"
@@ -9,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
@@ -27,6 +30,7 @@ type BlockchainTest struct {
 	trFailed       uint64
 	instance       *token.Token
 	chainID        *big.Int
+	trChan         chan Transaction
 }
 
 type TrTime struct {
@@ -37,4 +41,12 @@ type TrTime struct {
 type Addresses struct {
 	sync.Mutex
 	array []string
+}
+
+type Transaction struct {
+	Auth    *bind.TransactOpts
+	Addr    common.Address
+	Val     *big.Int
+	TrTime  time.Time
+	Context context.Context
 }
